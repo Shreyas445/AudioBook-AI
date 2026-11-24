@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NOIR STUDIO — AI Cinema Audiobook Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/web/styles.css" />
+</head>
+<body>
+  <!-- Ambient Monochrome Light Spheres (refracted through frosted glass panels) -->
+  <div class="ambient-scene" aria-hidden="true">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+  <!-- Top-level Frosted Glass Dropdown Portal (true backdrop-filter blur over all surfaces) -->
+  <div id="dropdown-portal" class="dropdown-portal hidden" role="listbox"></div>
+
+  <div class="app-shell">
+    <!-- FLOATING FROSTED GLASS TOP BAR -->
+    <header class="topbar glass">
+      <div class="topbar-left">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </div>
+          <span class="brand-name">NOIR<em>STUDIO</em></span>
+        </div>
+
+        <div class="v-sep"></div>
+
+        <!-- Sliding Frosted Pill Mode Switcher -->
+        <nav class="mode-switcher" role="tablist" aria-label="Workflow Mode">
+          <div class="mode-glider" id="mode-glider"></div>
+          <button type="button" class="mode-tab active" data-tab="auto" role="tab" aria-selected="true">
+            Auto-Director
+          </button>
+          <button type="button" class="mode-tab" data-tab="byoai" role="tab" aria-selected="false">
+            Prompt &amp; JSON
+          </button>
+        </nav>
+      </div>
+
+      <div class="telemetry-bar">
+        <span class="meta-chip" id="gpu-pill" title="Active Compute Device">
+          <i class="dot"></i>
+          <span id="gpu-text">GPU...</span>
+        </span>
+        <span class="meta-chip" id="disk-text" title="Free Storage">-- GB</span>
+        <button class="btn-glass" id="free-vram-btn" type="button" title="Unload cached models from GPU VRAM">
+          Clear VRAM
+        </button>
+      </div>
+    </header>
+
+    <!-- TWO-PANE FROSTED GLASS WORKSPACE -->
+    <main class="workspace">
+      <!-- LEFT PANE -->
+      <section class="pane glass spotlight-card">
+        <!-- TAB 1: AI AUTO-DIRECTOR -->
+        <div id="panel-auto" class="tab-panel active">
+          <div class="section-block">
+            <div class="section-head">
+              <h2>AI Director</h2>
+              <button type="button" class="link-btn" id="toggle-adv-btn">Endpoint &amp; Chunking</button>
+            </div>
+
+            <div class="grid-2">
+              <div class="field">
+                <label for="provider-select">Provider</label>
+                <div class="select-wrap">
+                  <select id="provider-select"></select>
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="model-input">Model</label>
+                <div class="combo-box" id="model-combo">
+                  <input type="text" id="model-input" placeholder="nvidia/nemotron-3.5-bolt-e4b" autocomplete="off" />
+                  <button type="button" class="combo-refresh" id="fetch-models-btn" title="Fetch live models from API">↻</button>
+                  <button type="button" class="combo-chevron" id="model-combo-btn" aria-label="Toggle model list">▾</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="field" id="api-key-field">
+              <div class="label-row">
+                <label for="api-key-input">API Key</label>
+                <label class="check-label">
+                  <input type="checkbox" id="save-key-chk" checked />
+                  <span>Remember key</span>
+                </label>
+              </div>
+              <div class="input-with-btn">
+                <input type="password" id="api-key-input" placeholder="nvapi-..." autocomplete="off" />
+                <button type="button" class="inline-btn" id="toggle-key-vis">Show</button>
+              </div>
+            </div>
+
+            <div class="collapsible" id="adv-drawer">
+              <div class="collapsible-inner">
+                <div class="grid-2 pt-4">
+                  <div class="field">
+                    <label for="base-url-input">Base URL</label>
+                    <input type="text" id="base-url-input" placeholder="https://integrate.api.nvidia.com/v1" />
+                  </div>
+                  <div class="field">
+                    <div class="label-row">
+                      <label for="chunk-size-auto">Chunk Size</label>
+                      <span class="mono" id="chunk-size-auto-val">2800 chars</span>
+                    </div>
+                    <input type="range" id="chunk-size-auto" min="1200" max="6000" step="200" value="2800" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hairline"></div>
+
+          <div class="section-block grow-block">
+            <div class="section-head">
+              <h2>Manuscript</h2>
+              <span class="muted-hint">Drop <code>.pdf</code> / <code>.txt</code> or write below</span>
+            </div>
+
+            <div class="manuscript-box glass-well" id="dropzone-auto">
+              <input type="file" id="file-input-auto" accept=".txt,.pdf" hidden />
+              <div class="attach-bar">
+                <div id="dz-auto-idle" class="attach-idle">
+                  <button type="button" class="btn-glass" id="btn-browse-auto">+ Attach PDF / TXT</button>
+                  <span class="muted-hint">or drag file here</span>
+                </div>
+                <div id="dz-auto-loaded" class="attach-loaded hidden">
+                  <span class="file-pill">
+                    <strong id="dz-auto-name">book.pdf</strong>
+                    <em id="dz-auto-stats">0 words</em>
+                  </span>
+                  <button type="button" class="link-btn" id="dz-auto-clear">Remove</button>
+                </div>
+              </div>
+              <textarea id="raw-text-auto" rows="7" placeholder="Or paste your story / chapter directly here..."></textarea>
+            </div>
+          </div>
+
+          <div class="action-bar">
+            <button type="button" class="btn-primary" id="btn-run-auto">
+              <span>Direct &amp; Master Audiobook</span>
+              <span class="arrow">→</span>
+            </button>
+            <button type="button" class="btn-outline hidden" id="btn-stop-auto">Stop</button>
+          </div>
+        </div>
+
+        <!-- TAB 2: STANDALONE PROMPT + PASTE JSON -->
+        <div id="panel-byoai" class="tab-panel">
+          <!-- STEP 1: ZERO-STORY INSTANT PROMPT GENERATOR -->
+          <div class="section-block">
+            <div class="section-head">
+              <div>
+                <h2>1 · Copy Director Prompt</h2>
+                <p class="micro-sub">Upload your own story file directly inside ChatGPT, Claude, or Gemini and paste this prompt with it.</p>
+              </div>
+              <button type="button" class="link-btn" id="toggle-embed-story-btn">+ Embed Story (Optional)</button>
+            </div>
+
+            <div class="prompt-bar-row">
+              <input
+                type="text"
+                id="custom-direction-input"
+                placeholder="Optional style note (e.g. Pirate fantasy, Indian cast, intense thriller pacing)..."
+              />
+              <button type="button" class="btn-secondary" id="btn-copy-standalone">Copy Prompt</button>
+              <button type="button" class="btn-glass" id="btn-preview-prompt" title="View or edit prompt text">Preview</button>
+            </div>
+
+            <!-- Optional Collapsible: Embed Story Inside Prompt (only if user wants chunked text embedded) -->
+            <div class="collapsible" id="embed-story-drawer">
+              <div class="collapsible-inner">
+                <div class="manuscript-box glass-well compact-ms mt-6" id="dropzone-prompt">
+                  <input type="file" id="file-input-prompt" accept=".txt,.pdf" hidden />
+                  <div class="attach-bar">
+                    <div id="dz-prompt-idle" class="attach-idle">
+                      <button type="button" class="btn-glass" id="btn-browse-prompt">+ Attach Book to Split</button>
+                      <span class="muted-hint">splits long books into parts</span>
+                    </div>
+                    <div id="dz-prompt-loaded" class="attach-loaded hidden">
+                      <span class="file-pill">
+                        <strong id="dz-prompt-name">book.txt</strong>
+                        <em id="dz-prompt-stats">0 chars</em>
+                      </span>
+                      <button type="button" class="link-btn" id="dz-prompt-clear">Remove</button>
+                    </div>
+                  </div>
+                  <textarea id="raw-text-prompt" rows="2" placeholder="Or paste text to embed directly into prompt parts..."></textarea>
+                </div>
+                <div class="row-between mt-6">
+                  <div class="inline-slider">
+                    <label for="prompt-chunk-size">Part size:</label>
+                    <input type="range" id="prompt-chunk-size" min="2000" max="9000" step="500" value="4200" />
+                    <span class="mono" id="prompt-chunk-val">4200c</span>
+                  </div>
+                  <button type="button" class="btn-glass" id="btn-gen-prompts">Build Split Prompts</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Collapsible Prompt Text Preview -->
+            <div id="prompt-result-box" class="prompt-drawer glass-well hidden">
+              <div class="row-between mb-6">
+                <div class="part-pills" id="prompt-part-pills"></div>
+                <button type="button" class="btn-glass" id="btn-copy-prompt">Copy Shown Prompt</button>
+              </div>
+              <textarea id="generated-prompt-text" class="mono-text" rows="5" readonly></textarea>
+            </div>
+          </div>
+
+          <div class="hairline"></div>
+
+          <!-- STEP 2: PASTE JSON FROM AI & RENDER -->
+          <div class="section-block grow-block">
+            <div class="section-head">
+              <h2>2 · Paste AI JSON &amp; Master</h2>
+              <button type="button" class="link-btn" id="btn-load-sample-json">Insert Demo Scene</button>
+            </div>
+
+            <div class="grid-title-row">
+              <label for="project-title-input">Output Name</label>
+              <input type="text" id="project-title-input" value="noir_audiobook" placeholder="noir_audiobook" />
+            </div>
+
+            <textarea
+              id="pasted-json-input"
+              class="mono-text glass-textarea"
+              rows="7"
+              placeholder="Paste the JSON response from ChatGPT / Claude / Gemini here (supports ```json code blocks, <think> traces, and multiple parts pasted together)..."
+            ></textarea>
+          </div>
+
+          <div class="action-bar">
+            <button type="button" class="btn-secondary" id="btn-validate-json">Validate Cast</button>
+            <button type="button" class="btn-primary" id="btn-run-json">
+              <span>Render Audiobook</span>
+              <span class="arrow">→</span>
+            </button>
+            <button type="button" class="btn-outline hidden" id="btn-stop-json">Stop</button>
+          </div>
+        </div>
+
+        <!-- FROSTED FOOTER MIX BAR -->
+        <div class="mix-footer">
+          <div class="mix-cell">
+            <label for="soundscape-mode">Sound Engine</label>
+            <div class="select-wrap">
+              <select id="soundscape-mode">
+                <option value="neural">Neural GPU (Cached)</option>
+                <option value="procedural">Procedural (0 VRAM)</option>
+                <option value="none">Voice Only</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mix-cell">
+            <label for="narrator-voice">Narrator</label>
+            <div class="select-wrap">
+              <select id="narrator-voice"></select>
+            </div>
+          </div>
+
+          <div class="mix-cell">
+            <div class="label-row">
+              <label for="bgm-volume">BGM Trim</label>
+              <span class="mono" id="bgm-volume-val">0.0 dB</span>
+            </div>
+            <input type="range" id="bgm-volume" min="-8" max="4" step="0.5" value="0" />
+          </div>
+
+          <div class="mix-cell sfx-cell">
+            <label for="sfx-toggle">SFX</label>
+            <button type="button" id="sfx-toggle" class="mini-switch active" role="switch" aria-checked="true">
+              <span class="thumb"></span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT PANE: FROSTED GLASS MONITOR & INSPECTOR -->
+      <section class="pane glass spotlight-card">
+        <div class="player-module">
+          <div class="pipeline-bar" id="pipeline-stepper">
+            <div class="stages-inline">
+              <span class="st-item" data-stage="1"><i>01</i> Script</span>
+              <span class="st-sep">/</span>
+              <span class="st-item" data-stage="2"><i>02</i> Soundscape</span>
+              <span class="st-sep">/</span>
+              <span class="st-item" data-stage="3"><i>03</i> Voices</span>
+              <span class="st-sep">/</span>
+              <span class="st-item" data-stage="4"><i>04</i> Master</span>
+            </div>
+            <span class="mono status-pct" id="progress-pct">IDLE</span>
+          </div>
+
+          <div class="thin-progress">
+            <div class="thin-fill" id="progress-fill"></div>
+          </div>
+
+          <div class="player-header">
+            <div class="track-meta">
+              <span class="state-tag" id="player-state-tag">STANDBY</span>
+              <h3 id="track-title">No master loaded</h3>
+            </div>
+            <a id="download-audio-btn" class="btn-glass disabled" href="#" download>↓ Download</a>
+          </div>
+
+          <div class="canvas-wrap glass-well">
+            <canvas id="waveform-canvas" width="640" height="68"></canvas>
+          </div>
+
+          <audio id="studio-audio" preload="metadata" crossorigin="anonymous"></audio>
+
+          <div class="scrubber-row">
+            <span class="mono time" id="time-current">00:00</span>
+            <div class="scrub-track" id="scrub-track">
+              <div class="scrub-fill" id="scrub-fill"></div>
+              <input type="range" id="seek-slider" min="0" max="1000" value="0" disabled />
+            </div>
+            <span class="mono time" id="time-duration">00:00</span>
+          </div>
+
+          <div class="transport-row">
+            <div class="transport-btns">
+              <button type="button" class="btn-glass" id="btn-skip-back" disabled>−10s</button>
+              <button type="button" class="play-circle" id="btn-play-pause" disabled aria-label="Play/Pause">
+                <span id="play-icon">▶</span>
+              </button>
+              <button type="button" class="btn-glass" id="btn-skip-fwd" disabled>+10s</button>
+            </div>
+
+            <div class="rate-group" id="speed-pills">
+              <button type="button" data-rate="1">1×</button>
+              <button type="button" data-rate="1.25">1.25×</button>
+              <button type="button" data-rate="1.5">1.5×</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="hairline"></div>
+
+        <!-- TABBED OUTPUT INSPECTOR -->
+        <div class="inspector-module">
+          <div class="inspector-tabs">
+            <div class="insp-nav">
+              <button type="button" class="insp-tab active" data-insp="cast">
+                Cast &amp; Cues <span class="count-pill" id="cast-count-badge">0</span>
+              </button>
+              <button type="button" class="insp-tab" data-insp="console">Console</button>
+              <button type="button" class="insp-tab" data-insp="json">Script JSON</button>
+            </div>
+
+            <div class="insp-actions">
+              <button type="button" class="link-btn hidden" id="btn-clear-log">Clear</button>
+              <button type="button" class="link-btn hidden" id="btn-copy-active-json">Copy JSON</button>
+            </div>
+          </div>
+
+          <div class="insp-view active" id="insp-cast">
+            <div id="cast-empty" class="empty-box">
+              Character voice assignments, persona profiles, BGM themes, and timed SFX cues appear here.
+            </div>
+            <div id="cast-content" class="hidden">
+              <div class="cue-strip" id="cue-clusters"></div>
+              <div class="cast-list" id="cast-list"></div>
+            </div>
+          </div>
+
+          <div class="insp-view" id="insp-console">
+            <pre id="console-log" class="console-box">● Ready.</pre>
+          </div>
+
+          <div class="insp-view" id="insp-json">
+            <textarea id="active-script-json" class="mono-text json-viewer" readonly placeholder="Generated ProductionScript JSON appears here..."></textarea>
+          </div>
+
+          <div class="live-ticker">
+            <span class="ticker-dot"></span>
+            <span id="ticker-text">Ready for manuscript or JSON script.</span>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/web/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+# Virtual Environments
+.venv/
+venv/
+env/
+
+# Python Bytecode & Caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# API Keys & Local Secrets (NEVER COMMIT)
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+secrets.json
+
+# Generated Audio, User Book Uploads & Temp Assets
+output/
+*.mp3
+*.wav
+
+# OS & Editor Metadata
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

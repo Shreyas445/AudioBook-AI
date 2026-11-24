@@ -1,0 +1,11 @@
+kokoro
+soundfile
+diffusers==0.29.2
+transformers==4.38.2
+accelerate
+pydub
+pydantic>=2.0.0
+scipy
+tqdm
+numpy
+pypdf
